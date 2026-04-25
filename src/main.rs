@@ -7,6 +7,12 @@ enum TokenType {
     RBrace,
     LBracket,
     RBracket,
+    Comma,
+    Colon,
+    Period,
+    LessThan,
+    GreaterThan,
+    SemiColon,
 
     // operators
     Plus,
@@ -96,6 +102,30 @@ impl Token {
                 token.token_type = TokenType::Division;
                 token
             }
+            ":" => {
+                token.token_type = TokenType::Colon;
+                token
+            }
+            "," => {
+                token.token_type = TokenType::Comma;
+                token
+            }
+            "." => {
+                token.token_type = TokenType::Period;
+                token
+            }
+            "<" => {
+                token.token_type = TokenType::LessThan;
+                token
+            }
+            ">" => {
+                token.token_type = TokenType::GreaterThan;
+                token
+            }
+            ";" => {
+                token.token_type = TokenType::SemiColon;
+                token
+            }
             elemt if is_numeric(elemt) => {
                 token.token_type = TokenType::Number;
                 token
@@ -157,7 +187,8 @@ impl Iterator for Tokenizer {
     fn next(&mut self) -> Option<Self::Item> {
         let value = self.source.get(self.cursor)?;
         match value {
-            '(' | ')' | '[' | ']' | '{' | '}' | '+' | '-' | 'x' | '/' => {
+            '(' | ')' | '[' | ']' | '{' | '}' | '+' | '-' | 'x' | '/' | '.' | ':' | '<' | '>'
+            | ';' => {
                 self.cursor += 1;
                 Some(Token::new(&value.to_string(), self.line, 1))
             }
@@ -172,6 +203,12 @@ impl Iterator for Tokenizer {
 }
 
 fn main() {
-    let lexer = Tokenizer::new("(1 + 2)");
+    let source = "
+def fibonnaci(number):
+  if number < 2:
+    return 1
+  return fibonnaci(number - 1) + fibonnaci(number - 2)
+    ";
+    let lexer = Tokenizer::new(source);
     print!("{:?}", lexer.collect::<Vec<Token>>());
 }
