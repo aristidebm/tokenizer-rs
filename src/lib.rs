@@ -147,6 +147,7 @@ pub struct Tokenizer {
     source: Vec<char>,
     cursor: usize,
     line: usize,
+    column: usize,
 }
 
 impl Tokenizer {
@@ -154,7 +155,8 @@ impl Tokenizer {
         Self {
             source: source.chars().collect(),
             cursor: 0,
-            line: 0,
+            line: 1,
+            column: 1,
         }
     }
 
@@ -166,7 +168,7 @@ impl Tokenizer {
             self.cursor += 1;
             word.push(*elmt);
         }
-        Some(Token::new(word.as_str(), self.line, 1))
+        Some(Token::new(word.as_str(), self.line, self.column))
     }
 
     fn next_word(&mut self) -> Option<Token> {
@@ -177,7 +179,7 @@ impl Tokenizer {
             self.cursor += 1;
             word.push(*elmt);
         }
-        Some(Token::new(word.as_str(), self.line, 1))
+        Some(Token::new(word.as_str(), self.line, self.column))
     }
 }
 
@@ -190,17 +192,30 @@ impl Iterator for Tokenizer {
             '(' | ')' | '[' | ']' | '{' | '}' | '+' | '-' | 'x' | '/' | '.' | ':' | '<' | '>'
             | ';' => {
                 self.cursor += 1;
-                Some(Token::new(&value.to_string(), self.line, 1))
+                let token = Token::new(&value.to_string(), self.line, self.column);
+                self.column += 1;
+                return Some(token);
             }
             value if value.is_whitespace() => {
                 self.cursor += 1;
+                let token = Token::new(&value.to_string(), self.line, self.column);
+                self.column += 1;
                 if *value == '\n' {
                     self.line += 1;
+                    self.column = 1;
                 }
-                Some(Token::new(&value.to_string(), self.line, 1))
+                return Some(token);
             }
-            value if value.is_digit(10) => self.next_number(),
-            _ => self.next_word(),
+            value if value.is_digit(10) => {
+                let token = self.next_number();
+                self.column += 1;
+                return token;
+            }
+            _ => {
+                let token = self.next_word();
+                self.column += 1;
+                return token;
+            }
         }
     }
 }
@@ -211,16 +226,24 @@ mod tests {
 
     #[test]
     fn test_tokenizer() {
-        let source = "(1 + 2)";
+        let source = "\
+  def fibonacci(number):
+    pass";
         let lexer = Tokenizer::new(source);
         let expected = vec![
-            Token::new("(", 1, 1),
-            Token::new("1", 1, 1),
-            Token::new(" ", 1, 1),
-            Token::new("+", 1, 1),
-            Token::new(" ", 1, 1),
-            Token::new("2", 1, 1),
-            Token::new(")", 1, 1),
+            Token::new("def", 1, 1),
+            Token::new(" ", 1, 2),
+            Token::new("fibonacci", 1, 3),
+            Token::new("(", 1, 4),
+            Token::new("number", 1, 5),
+            Token::new(")", 1, 6),
+            Token::new(":", 1, 7),
+            Token::new("\n", 1, 8),
+            Token::new(" ", 2, 1),
+            Token::new(" ", 2, 2),
+            Token::new(" ", 2, 3),
+            Token::new(" ", 2, 4),
+            Token::new("pass", 2, 5),
         ];
         let lexems = lexer.collect::<Vec<Token>>();
         assert_eq!(lexems, expected);
