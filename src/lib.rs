@@ -154,7 +154,7 @@ impl Tokenizer {
         Self {
             source: source.chars().collect(),
             cursor: 0,
-            line: 1,
+            line: 0,
         }
     }
 
@@ -194,6 +194,9 @@ impl Iterator for Tokenizer {
             }
             value if value.is_whitespace() => {
                 self.cursor += 1;
+                if *value == '\n' {
+                    self.line += 1;
+                }
                 Some(Token::new(&value.to_string(), self.line, 1))
             }
             value if value.is_digit(10) => self.next_number(),

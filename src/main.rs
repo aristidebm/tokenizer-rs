@@ -1,7 +1,7 @@
 use tokenizer::{Token, Tokenizer};
 
 fn main() {
-    let source = "
+    let source = "\
 def fibonnaci(number):
   if number < 2:
     return 1
